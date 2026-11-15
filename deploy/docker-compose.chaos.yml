@@ -1,0 +1,18 @@
+# Chaos override: fast timings so lease expiry / retries happen within seconds.
+# docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.chaos.yml up -d --build
+services:
+  worker:
+    environment:
+      LEASE_SECONDS: "5"
+      RETRY_BASE_MS: "50"
+      RETRY_MAX_MS: "1000"
+      REAP_INTERVAL_MS: "500"
+      WORKER_CONCURRENCY: "20"
+    deploy:
+      replicas: 4
+  scheduler:
+    environment:
+      LEASE_SECONDS: "5"
+      RETRY_BASE_MS: "50"
+      RETRY_MAX_MS: "1000"
+      REAP_INTERVAL_MS: "500"

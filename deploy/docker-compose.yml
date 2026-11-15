@@ -1,0 +1,49 @@
+name: taskq
+
+x-app: &app
+  build:
+    context: ..
+    dockerfile: Dockerfile
+  environment:
+    DATABASE_URL: postgres://taskq:taskq@postgres:5432/taskq?sslmode=disable
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: taskq
+      POSTGRES_PASSWORD: taskq
+      POSTGRES_DB: taskq
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskq -d taskq"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    <<: *app
+    command: ["api"]
+    ports:
+      - "8080:8080"
+
+  worker:
+    <<: *app
+    command: ["worker"]
+    deploy:
+      replicas: 3
+
+  scheduler:
+    <<: *app
+    command: ["scheduler"]
+    deploy:
+      replicas: 2
+
+volumes:
+  pgdata:

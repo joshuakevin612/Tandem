@@ -1,0 +1,10 @@
+/bin/
+*.exe
+*.test
+*.out
+.env
+.idea/
+.vscode/
+
+# Local Claude Code settings
+.claude/settings.local.json

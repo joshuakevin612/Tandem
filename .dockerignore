@@ -1,0 +1,7 @@
+.git
+.claude
+bin
+*.exe
+*.test
+deploy
+Dockerfile
