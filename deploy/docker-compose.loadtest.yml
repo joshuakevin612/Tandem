@@ -1,0 +1,7 @@
+# Load-test override: keeps apikey auth but turns the per-tenant submit rate
+# limit off so k6 measures the system, not the limiter.
+# docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.loadtest.yml up -d --build
+services:
+  api:
+    environment:
+      RATELIMIT_ENABLED: "false"

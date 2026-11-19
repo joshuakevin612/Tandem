@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"taskq/internal/config"
+	"taskq/internal/metrics"
 	"taskq/internal/queue"
 	"taskq/internal/redisx"
 	"taskq/internal/store"
@@ -43,6 +44,12 @@ func main() {
 		}
 	}
 
+	// The metrics server outlives the pool drain so in-flight work stays visible.
+	mreg := metrics.NewRegistry()
+	mctx, stopMetrics := context.WithCancel(context.Background())
+	waitMetrics := metrics.Serve(mctx, cfg.MetricsAddr, mreg, log)
+	defer func() { stopMetrics(); waitMetrics() }()
+
 	reg := worker.NewRegistry()
 	handlers.RegisterBuiltins(reg)
 	pool := worker.NewPool(worker.Config{
@@ -55,6 +62,7 @@ func main() {
 		Backoff:     queue.Backoff{Base: cfg.RetryBase(), Max: cfg.RetryMax()},
 		Wake:        wakeCh,
 		Logger:      log,
+		Metrics:     metrics.NewWorker(mreg),
 	})
 
 	log.Info("started", "queues", cfg.WorkerQueues, "concurrency", cfg.WorkerConcurrency)

@@ -7,7 +7,10 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
+	"taskq/internal/metrics"
 )
 
 type ctxKey struct{}
@@ -93,6 +96,32 @@ func timeout(d time.Duration) func(http.Handler) http.Handler {
 			ctx, cancel := context.WithTimeout(r.Context(), d)
 			defer cancel()
 			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// instrument records request count and latency per chi route pattern. The
+// pattern (e.g. /v1/jobs/{id}) is read after the handler ran, since chi only
+// fills it in during routing; raw paths would explode label cardinality.
+// Unrouted requests share one "unmatched" route.
+func instrument(m *metrics.API) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		if m == nil {
+			return next
+		}
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			sw := &statusWriter{ResponseWriter: w}
+			next.ServeHTTP(sw, r)
+			route := "unmatched"
+			if rc := chi.RouteContext(r.Context()); rc != nil && rc.RoutePattern() != "" {
+				route = rc.RoutePattern()
+			}
+			code := sw.status
+			if code == 0 {
+				code = http.StatusOK
+			}
+			m.ObserveRequest(route, r.Method, code, time.Since(start))
 		})
 	}
 }

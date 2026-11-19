@@ -19,6 +19,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"taskq/internal/metrics"
 	"taskq/internal/store"
 )
 
@@ -77,6 +78,11 @@ type Deps struct {
 	Limiter  Limiter
 	Cache    StatusCache
 	Notifier Notifier
+	// Metrics records request and business metrics; nil records nothing.
+	Metrics *metrics.API
+	// MetricsHandler, if set, is served at /metrics OUTSIDE auth. In production
+	// restrict it (network policy / separate listener); nginx does not proxy it.
+	MetricsHandler http.Handler
 }
 
 // Option customises NewServer.
@@ -95,9 +101,12 @@ func NewServer(st JobStore, logger *slog.Logger, opts ...Option) http.Handler {
 	}
 	s := &server{store: st, log: logger, now: time.Now, deps: deps}
 	r := chi.NewRouter()
-	r.Use(withRequestID, accessLog(logger), recoverer(logger), timeout(requestTimeout))
+	r.Use(withRequestID, accessLog(logger), instrument(deps.Metrics), recoverer(logger), timeout(requestTimeout))
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	r.Get("/readyz", s.ready)
+	if deps.MetricsHandler != nil {
+		r.Method(http.MethodGet, "/metrics", deps.MetricsHandler)
+	}
 	r.Group(func(r chi.Router) {
 		r.Use(deps.Auth)
 		r.Post("/v1/jobs", s.createJob)
@@ -141,6 +150,7 @@ func (s *server) createJob(w http.ResponseWriter, r *http.Request) {
 			if secs < 1 {
 				secs = 1
 			}
+			s.deps.Metrics.RateLimited()
 			w.Header().Set("Retry-After", strconv.Itoa(secs))
 			writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
 			return
@@ -170,6 +180,7 @@ func (s *server) createJob(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, err)
 		return
 	}
+	s.deps.Metrics.JobSubmitted(job.Queue)
 	// Wake idle workers if the job is runnable now. The store does not say
 	// whether this was an idempotent replay, so a replay may notify too; that
 	// only costs a spurious empty poll. Notify is bounded and ignores errors.
@@ -214,7 +225,9 @@ func (s *server) getJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if c := s.deps.Cache; c != nil {
-		if job, hit := c.Get(r.Context(), id); hit {
+		job, hit := c.Get(r.Context(), id)
+		s.deps.Metrics.StatusCache(hit)
+		if hit {
 			// Tenant is enforced on hits exactly as on misses.
 			if job.TenantID != tenant {
 				writeError(w, http.StatusNotFound, "job not found")

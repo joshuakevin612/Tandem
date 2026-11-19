@@ -14,6 +14,7 @@ import (
 
 	"taskq/internal/api"
 	"taskq/internal/config"
+	"taskq/internal/metrics"
 	"taskq/internal/ratelimit"
 	"taskq/internal/redisx"
 	"taskq/internal/statuscache"
@@ -72,7 +73,10 @@ func main() {
 		defer rdb.Close()
 	}
 
-	var deps api.Deps
+	// /metrics is served on the API router outside auth; in production restrict
+	// access to it (nginx does not proxy it).
+	reg := metrics.NewRegistry()
+	deps := api.Deps{Metrics: metrics.NewAPI(reg), MetricsHandler: metrics.Handler(reg)}
 	if rdb != nil {
 		if cfg.RateLimitEnabled {
 			deps.Limiter = ratelimit.New(rdb, cfg.RateLimitRate, cfg.RateLimitBurst)
