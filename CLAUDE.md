@@ -74,4 +74,4 @@ One Go module, one Docker image, three binaries chosen by the compose `command`:
 - Migrations are embedded from `internal/store/migrations` and numbered (`0001_`, `0002_`, ...). Add a new pair (`.up.sql`/`.down.sql`); never edit an applied one.
 - Packages define the small store interface they need rather than depending on `*store.Store`; keep fakes in tests in sync when adding methods.
 - Tests coordinate with channels and injected clocks or hooks, not sleeps.
-- Observability and load testing are done (week 5). Remaining: week 6 polish (README, DESIGN.md).
+- Observability, load testing and week 6 docs (README.md, DESIGN.md, demo/DEMO.md) are done. Remaining stretch, optional: a Kafka job-lifecycle event stream.
