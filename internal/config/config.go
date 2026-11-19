@@ -22,6 +22,13 @@ type Config struct {
 	CronIntervalMS    int
 	LeaderRetryMS     int
 	LeaderCheckMS     int
+	RedisURL          string // empty = all Redis features off
+	AuthMode          string // header (default) or apikey
+	WakeEnabled       bool   // only effective when RedisURL is set
+	RateLimitEnabled  bool   // only effective when RedisURL is set
+	RateLimitRate     float64
+	RateLimitBurst    int
+	StatusCacheTTLMS  int // 0 disables
 }
 
 func Load() Config {
@@ -39,6 +46,13 @@ func Load() Config {
 		CronIntervalMS:    num("CRON_INTERVAL_MS", 1000),
 		LeaderRetryMS:     num("LEADER_RETRY_MS", 2000),
 		LeaderCheckMS:     num("LEADER_CHECK_MS", 1000),
+		RedisURL:          str("REDIS_URL", ""),
+		AuthMode:          str("AUTH_MODE", "header"),
+		WakeEnabled:       str("WAKE_ENABLED", "true") != "false" && str("WAKE_ENABLED", "true") != "0",
+		RateLimitEnabled:  str("RATELIMIT_ENABLED", "true") != "false" && str("RATELIMIT_ENABLED", "true") != "0",
+		RateLimitRate:     float64(num("RATELIMIT_RATE_PER_SEC", 50)),
+		RateLimitBurst:    num("RATELIMIT_BURST", 100),
+		StatusCacheTTLMS:  numOrZero("STATUS_CACHE_TTL_MS", 10000),
 	}
 }
 
@@ -91,3 +105,11 @@ func (c Config) LeaderRetry() time.Duration { return time.Duration(c.LeaderRetry
 
 // LeaderCheck is how often the leader verifies it still holds the lock.
 func (c Config) LeaderCheck() time.Duration { return time.Duration(c.LeaderCheckMS) * time.Millisecond }
+
+// numOrZero is like num but accepts 0 (e.g. to disable a feature).
+func numOrZero(key string, def int) int {
+	if n, err := strconv.Atoi(os.Getenv(key)); err == nil && n >= 0 {
+		return n
+	}
+	return def
+}

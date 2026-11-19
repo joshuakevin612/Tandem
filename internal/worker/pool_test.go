@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -284,4 +285,38 @@ func (f *fakeStore) setExtend(fn func([]uuid.UUID) ([]uuid.UUID, error)) {
 	f.mu.Lock()
 	f.extendFn = fn
 	f.mu.Unlock()
+}
+
+// With a huge PollInterval, only a Wake can get a job picked up promptly.
+func TestWakeCutsPollSleepShort(t *testing.T) {
+	fs := newFake(0, "t")
+	reg := NewRegistry()
+	reg.Register("t", func(context.Context, store.Job) error { return nil })
+	wake := make(chan struct{}, 1)
+	p := NewPool(Config{
+		Store: fs, Registry: reg, Concurrency: 1, Lease: time.Minute,
+		PollInterval: time.Hour, ShutdownTimeout: 5 * time.Second, Logger: quiet, Wake: wake,
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- p.Run(ctx) }()
+	defer func() { cancel(); <-done }()
+
+	// Wait until the loop has polled the empty queue and is sleeping.
+	for fs.calls() == 0 {
+		runtime.Gosched()
+	}
+	fs.add("t")
+	wake <- struct{}{}
+	recv(t, fs.completed)
+}
+
+// A nil Wake must leave the polling path untouched.
+func TestNilWakeStillPolls(t *testing.T) {
+	fs := newFake(0, "t")
+	reg := NewRegistry()
+	reg.Register("t", func(context.Context, store.Job) error { return nil })
+	start(t, fs, reg, 1) // Wake nil, PollInterval 1ms
+	fs.add("t")
+	recv(t, fs.completed)
 }

@@ -9,7 +9,9 @@ import (
 
 	"taskq/internal/config"
 	"taskq/internal/queue"
+	"taskq/internal/redisx"
 	"taskq/internal/store"
+	"taskq/internal/wake"
 	"taskq/internal/worker"
 	"taskq/internal/worker/handlers"
 )
@@ -27,6 +29,20 @@ func main() {
 	}
 	defer st.Close()
 
+	// Redis is optional and only used for wake-up hints; nil means pure polling.
+	rdb, err := redisx.New(cfg.RedisURL)
+	if err != nil {
+		log.Error("redis url", "err", err)
+		os.Exit(1)
+	}
+	var wakeCh <-chan struct{}
+	if rdb != nil {
+		defer rdb.Close()
+		if cfg.WakeEnabled {
+			wakeCh = wake.Subscribe(ctx, rdb, log)
+		}
+	}
+
 	reg := worker.NewRegistry()
 	handlers.RegisterBuiltins(reg)
 	pool := worker.NewPool(worker.Config{
@@ -37,6 +53,7 @@ func main() {
 		Lease:       cfg.Lease(),
 		JobTimeout:  cfg.JobTimeout(),
 		Backoff:     queue.Backoff{Base: cfg.RetryBase(), Max: cfg.RetryMax()},
+		Wake:        wakeCh,
 		Logger:      log,
 	})
 

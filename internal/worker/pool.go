@@ -38,6 +38,10 @@ type Config struct {
 	Backoff         queue.Backoff // retry delays; default 1s base, 5m max
 	Heartbeat       time.Duration // heartbeat period; default Lease/3
 	Logger          *slog.Logger
+
+	// Wake, if non-nil, cuts the idle poll sleep short when it receives. It is
+	// only a hint: polling remains the fallback, and nil means pure polling.
+	Wake <-chan struct{}
 }
 
 const (
@@ -187,8 +191,20 @@ func (p *Pool) leaseLoop(ctx, jobCtx context.Context, wg *sync.WaitGroup) {
 			idle = 0
 		} else if idle++; idle >= len(p.Queues) {
 			idle = 0
-			sleep(ctx, jitter(p.PollInterval))
+			p.idleWait(ctx)
 		}
+	}
+}
+
+// idleWait is the poll sleep taken when every queue came up empty. A receive
+// on Wake ends it early; a nil Wake blocks forever, leaving the timer.
+func (p *Pool) idleWait(ctx context.Context) {
+	t := time.NewTimer(jitter(p.PollInterval))
+	defer t.Stop()
+	select {
+	case <-t.C:
+	case <-p.Wake:
+	case <-ctx.Done():
 	}
 }
 
