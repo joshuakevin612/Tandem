@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"taskq/internal/cronexpr"
+	"taskq/internal/metrics"
 	"taskq/internal/store"
 )
 
@@ -22,7 +23,8 @@ type CronRunner struct {
 	Interval  time.Duration // default 1s
 	BatchSize int           // default 100
 	Logger    *slog.Logger
-	Now       func() time.Time // default time.Now
+	Now       func() time.Time   // default time.Now
+	Metrics   *metrics.Scheduler // optional
 }
 
 // Run blocks until ctx is cancelled, then returns nil.
@@ -97,6 +99,7 @@ func (c *CronRunner) fire(ctx context.Context, s store.Schedule, now time.Time, 
 		return false
 	}
 	if fired {
+		c.Metrics.ScheduleFired()
 		l.Info("fired schedule", "fire_at", s.NextFireAt, "next", next)
 	} else {
 		l.Debug("schedule already fired by another scheduler", "fire_at", s.NextFireAt)

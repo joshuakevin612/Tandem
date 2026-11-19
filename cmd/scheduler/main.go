@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"taskq/internal/config"
+	"taskq/internal/metrics"
 	"taskq/internal/scheduler"
 	"taskq/internal/store"
 )
@@ -29,8 +30,17 @@ func main() {
 	}
 	defer st.Close()
 
-	reaper := &scheduler.Reaper{Store: st, Interval: cfg.ReapInterval(), BatchSize: cfg.ReapBatch, Logger: log}
-	cron := &scheduler.CronRunner{Store: st, Interval: cfg.CronInterval(), Logger: log}
+	// The scheduler is the only binary that exports queue depth: one source of
+	// truth, no duplicate series from N workers or API replicas.
+	mreg := metrics.NewRegistry()
+	mreg.MustRegister(metrics.NewQueueDepth(st, log))
+	sm := metrics.NewScheduler(mreg)
+	mctx, stopMetrics := context.WithCancel(context.Background())
+	waitMetrics := metrics.Serve(mctx, cfg.MetricsAddr, mreg, log)
+	defer func() { stopMetrics(); waitMetrics() }()
+
+	reaper := &scheduler.Reaper{Store: st, Interval: cfg.ReapInterval(), BatchSize: cfg.ReapBatch, Logger: log, Metrics: sm}
+	cron := &scheduler.CronRunner{Store: st, Interval: cfg.CronInterval(), Logger: log, Metrics: sm}
 	elector := &scheduler.Elector{
 		Store: scheduler.PGLocker{S: st}, Key: schedulerLeaderKey,
 		RetryInterval: cfg.LeaderRetry(), CheckInterval: cfg.LeaderCheck(), Logger: log,

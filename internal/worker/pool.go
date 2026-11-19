@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"taskq/internal/metrics"
 	"taskq/internal/queue"
 	"taskq/internal/store"
 )
@@ -38,6 +39,7 @@ type Config struct {
 	Backoff         queue.Backoff // retry delays; default 1s base, 5m max
 	Heartbeat       time.Duration // heartbeat period; default Lease/3
 	Logger          *slog.Logger
+	Metrics         *metrics.Worker // optional; nil records nothing
 
 	// Wake, if non-nil, cuts the idle poll sleep short when it receives. It is
 	// only a hint: polling remains the fallback, and nil means pure polling.
@@ -155,6 +157,7 @@ func (p *Pool) leaseLoop(ctx, jobCtx context.Context, wg *sync.WaitGroup) {
 		// The lease clock starts server-side during this call, so measure from before it.
 		leasedAt := time.Now()
 		jobs, err := p.Store.LeaseJobs(ctx, queue, p.WorkerID, free, p.Lease)
+		p.Metrics.ObserveLease(queue, time.Since(leasedAt), len(jobs))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -169,6 +172,7 @@ func (p *Pool) leaseLoop(ctx, jobCtx context.Context, wg *sync.WaitGroup) {
 
 		for _, j := range jobs {
 			p.sem <- struct{}{}
+			p.Metrics.InFlightInc()
 			// Registered before the goroutine starts so the next heartbeat covers it.
 			f := p.track(jobCtx, j, leasedAt)
 			wg.Add(1)
@@ -176,6 +180,7 @@ func (p *Pool) leaseLoop(ctx, jobCtx context.Context, wg *sync.WaitGroup) {
 				defer wg.Done()
 				defer func() {
 					<-p.sem
+					p.Metrics.InFlightDec()
 					select {
 					case p.released <- struct{}{}:
 					default:
@@ -204,6 +209,7 @@ func (p *Pool) idleWait(ctx context.Context) {
 	select {
 	case <-t.C:
 	case <-p.Wake:
+		p.Metrics.Wakeup()
 	case <-ctx.Done():
 	}
 }
@@ -241,6 +247,7 @@ func (p *Pool) markLost(f *flight, cause error) {
 	}
 	f.lost = true
 	p.mu.Unlock()
+	p.Metrics.LostLease()
 	f.cancel(cause)
 }
 
@@ -330,9 +337,12 @@ func (p *Pool) execute(f *flight, j store.Job) {
 	defer p.untrack(f) // after the report, so heartbeats cover the write too
 	ctx := f.ctx
 
+	start := time.Now()
+	metricType := j.Type // client-controlled, so unregistered types must not become label values
 	var err error
 	if h, ok := p.Registry.Lookup(j.Type); !ok {
 		// Retryable on purpose: during a rolling deploy another worker may have this handler.
+		metricType = "unknown"
 		err = fmt.Errorf("no handler registered for type %s", j.Type)
 	} else {
 		hctx, cancel := context.WithTimeout(ctx, p.JobTimeout)
@@ -344,13 +354,16 @@ func (p *Pool) execute(f *flight, j store.Job) {
 		}
 	}
 
+	ran := time.Since(start)
 	if p.isLost(f) {
+		p.Metrics.ObserveAttempt(metricType, metrics.OutcomeLeaseLost, ran)
 		// Someone else owns the job now (or may); reporting could only confuse things.
 		log.Warn("lease lost during execution; result discarded", "cause", context.Cause(ctx), "err", err)
 		return
 	}
 	if err != nil && ctx.Err() != nil {
 		// Forced shutdown: leave the job running; it is re-leased once its lease expires.
+		p.Metrics.ObserveAttempt(metricType, metrics.OutcomeAbandoned, ran)
 		log.Warn("job abandoned at shutdown", "err", err)
 		return
 	}
@@ -358,6 +371,7 @@ func (p *Pool) execute(f *flight, j store.Job) {
 	// Detached from the run context so results are written during shutdown.
 	rctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), reportTimeout)
 	defer cancel()
+	outcome := metrics.OutcomeSucceeded
 	if err == nil {
 		err = p.Store.CompleteJob(rctx, j.ID, token)
 	} else {
@@ -365,15 +379,23 @@ func (p *Pool) execute(f *flight, j store.Job) {
 		if IsPermanent(err) {
 			retryIn = store.NoRetry
 		}
+		// Mirrors FailJob's decision: dead when retries are exhausted or forbidden, else requeued.
+		outcome = metrics.OutcomeRetried
+		if retryIn == store.NoRetry || j.Attempts >= j.MaxAttempts {
+			outcome = metrics.OutcomeDead
+		}
 		log.Info("job failed", "err", err, "retry_in", retryIn)
 		err = p.Store.FailJob(rctx, j.ID, token, err.Error(), retryIn)
 	}
 	switch {
 	case errors.Is(err, store.ErrLeaseLost):
+		outcome = metrics.OutcomeLeaseLost
 		log.Warn("lease lost; another worker owns the job")
 	case err != nil:
+		outcome = metrics.OutcomeReportError
 		log.Error("report result failed", "err", err)
 	}
+	p.Metrics.ObserveAttempt(metricType, outcome, ran)
 }
 
 func runSafely(ctx context.Context, h Handler, j store.Job, log *slog.Logger) (err error) {

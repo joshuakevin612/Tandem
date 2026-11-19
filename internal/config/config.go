@@ -28,7 +28,8 @@ type Config struct {
 	RateLimitEnabled  bool   // only effective when RedisURL is set
 	RateLimitRate     float64
 	RateLimitBurst    int
-	StatusCacheTTLMS  int // 0 disables
+	StatusCacheTTLMS  int    // 0 disables
+	MetricsAddr       string // worker/scheduler /metrics listener
 }
 
 func Load() Config {
@@ -53,6 +54,7 @@ func Load() Config {
 		RateLimitRate:     float64(num("RATELIMIT_RATE_PER_SEC", 50)),
 		RateLimitBurst:    num("RATELIMIT_BURST", 100),
 		StatusCacheTTLMS:  numOrZero("STATUS_CACHE_TTL_MS", 10000),
+		MetricsAddr:       str("METRICS_ADDR", ":9090"),
 	}
 }
 

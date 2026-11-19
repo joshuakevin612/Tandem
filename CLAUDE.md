@@ -21,6 +21,13 @@ docker compose -f deploy/docker-compose.yml exec api taskq-admin create-key -ten
 docker compose -f deploy/docker-compose.yml exec api taskq-admin list-keys -tenant acme   # also: revoke-key -id <uuid>
 ```
 
+Observability (in the main compose): Prometheus http://localhost:9091 (scrapes every api/worker/scheduler replica via DNS service discovery, 5s), Grafana http://localhost:3000 (anonymous viewer, **dev only**; provisioned `taskq` dashboard from `deploy/grafana/`). Load tests (k6 via Docker on the compose network; see `loadtest/README.md`, results in `loadtest/RESULTS.md`):
+
+```bash
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.loadtest.yml up -d --build   # rate limit off
+docker run --rm -i --network taskq_default -e API_KEY=$API_KEY -e RATE=200 grafana/k6 run - < loadtest/submit.js   # also loadtest/e2e.js
+```
+
 Chaos test (proves the guarantee; see `chaos/README.md` for reading the report):
 
 ```bash
@@ -60,9 +67,11 @@ One Go module, one Docker image, three binaries chosen by the compose `command`:
 
 **Edge (`deploy/nginx.conf`):** nginx on host `:8080` round-robins over the 2 `api` replicas (no host port on `api`; Docker DNS re-resolved every 5s). It retries only on connect error/timeout and never retries non-idempotent methods, so a POST is not replayed. The distroless api image has no curl, so its healthcheck is `api -healthcheck` (GET `/readyz`); workers and schedulers wait for a healthy api. The main compose sets `AUTH_MODE=apikey`; the chaos override sets `AUTH_MODE=header` and `RATELIMIT_ENABLED=false`.
 
+**Metrics (`internal/metrics`):** Prometheus, prefix `taskq_`, one `*prometheus.Registry` per binary (never the global default) plus Go/process collectors. Handle structs (`API`, `Worker`, `Scheduler`) have nil-safe methods, so pools, servers and reapers in tests just leave `Metrics` unset. The API serves `/metrics` on its router **outside auth** (restrict it in prod; nginx returns 404 for `/metrics`); worker and scheduler serve it on `METRICS_ADDR` (default `:9090`). The **scheduler alone** registers the `QueueDepth` collector (`taskq_jobs{queue,status}`, `taskq_oldest_queued_job_age_seconds{queue}`; one aggregate query per scrape, cached 5s). Never register it in another binary or every replica exports duplicate series. Route labels are chi route patterns, never raw paths; job `type` labels collapse unregistered types to `unknown`.
+
 ## Conventions
 
 - Migrations are embedded from `internal/store/migrations` and numbered (`0001_`, `0002_`, ...). Add a new pair (`.up.sql`/`.down.sql`); never edit an applied one.
 - Packages define the small store interface they need rather than depending on `*store.Store`; keep fakes in tests in sync when adding methods.
 - Tests coordinate with channels and injected clocks or hooks, not sleeps.
-- Planned work not yet built: Prometheus/Grafana, k6 load tests.
+- Observability and load testing are done (week 5). Remaining: week 6 polish (README, DESIGN.md).

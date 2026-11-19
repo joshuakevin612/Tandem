@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"time"
+
+	"taskq/internal/metrics"
 )
 
 // ReaperStore is the subset of store.Store the reaper uses.
@@ -20,6 +22,7 @@ type Reaper struct {
 	Interval  time.Duration // default 1s
 	BatchSize int           // default 500
 	Logger    *slog.Logger
+	Metrics   *metrics.Scheduler // optional
 }
 
 // Run blocks until ctx is cancelled, then returns nil.
@@ -44,6 +47,7 @@ func (r *Reaper) Run(ctx context.Context) error {
 				}
 				break
 			}
+			r.Metrics.Reaped(requeued + dead)
 			if requeued+dead > 0 {
 				log.Info("reaped expired leases", "requeued", requeued, "dead", dead)
 			}
