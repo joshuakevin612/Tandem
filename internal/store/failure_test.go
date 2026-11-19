@@ -345,7 +345,7 @@ func TestRequeueJob(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Status != "queued" || got.Attempts != 0 || got.FinishedAt != nil || got.LastError == nil || *got.LastError != "boom" || got.RunAt.After(time.Now()) {
+	if got.Status != "queued" || got.Attempts != 0 || got.FinishedAt != nil || got.LastError == nil || *got.LastError != "boom" || got.RunAt.After(time.Now().Add(clockSkew)) {
 		t.Fatalf("after requeue: %+v", got)
 	}
 	if _, err := s.RequeueJob(ctx, "a", j.ID); err != ErrInvalidState {
@@ -355,3 +355,7 @@ func TestRequeueJob(t *testing.T) {
 		t.Fatalf("lease after requeue: %+v", again)
 	}
 }
+
+// clockSkew tolerates the Postgres container's clock (which sets run_at via
+// now()) running slightly ahead of the host clock, as Docker Desktop VMs do.
+const clockSkew = 2 * time.Second

@@ -4,10 +4,13 @@ x-app: &app
   build:
     context: ..
     dockerfile: Dockerfile
-  environment:
+  environment: &env
     DATABASE_URL: postgres://taskq:taskq@postgres:5432/taskq?sslmode=disable
-  depends_on:
+    REDIS_URL: redis://redis:6379/0
+  depends_on: &deps
     postgres:
+      condition: service_healthy
+    redis:
       condition: service_healthy
 
 services:
@@ -27,21 +30,56 @@ services:
       timeout: 3s
       retries: 20
 
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
   api:
     <<: *app
     command: ["api"]
+    environment:
+      <<: *env
+      AUTH_MODE: apikey # the chaos override switches this back to header
+    deploy:
+      replicas: 2
+    healthcheck:
+      # distroless image: no shell or curl, so the binary probes itself.
+      test: ["CMD", "api", "-healthcheck"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  nginx:
+    image: nginx:1.27-alpine
     ports:
-      - "8080:8080"
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
 
   worker:
     <<: *app
     command: ["worker"]
+    depends_on:
+      <<: *deps
+      api:
+        condition: service_healthy
     deploy:
       replicas: 3
 
   scheduler:
     <<: *app
     command: ["scheduler"]
+    depends_on:
+      <<: *deps
+      api:
+        condition: service_healthy
     deploy:
       replicas: 2
 

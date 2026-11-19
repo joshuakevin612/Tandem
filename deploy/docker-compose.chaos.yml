@@ -1,6 +1,10 @@
 # Chaos override: fast timings so lease expiry / retries happen within seconds.
 # docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.chaos.yml up -d --build
 services:
+  api:
+    environment:
+      AUTH_MODE: header
+      RATELIMIT_ENABLED: "false"
   worker:
     environment:
       LEASE_SECONDS: "5"
