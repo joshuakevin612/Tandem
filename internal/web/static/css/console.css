@@ -1,0 +1,237 @@
+/* The console in Apple's design language, layered over app.css.
+   Crimson and ivory stay as the tint; what changes is the system around them:
+   San Francisco type (Inter where SF isn't installed), sentence-case large
+   titles, grouped inset lists, glass materials, iOS controls, and toasts that
+   drop from the top like the Dynamic Island. Everything is scoped off the
+   landing page, which keeps its own look. */
+
+/* San Francisco everywhere, landing included (Inter where SF isn't installed). */
+body {
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --fill-1: rgba(255, 240, 220, 0.055);
+  letter-spacing: -0.01em;
+  & .wordmark { font-family: "Archivo", ui-sans-serif, system-ui, sans-serif; } /* the logo keeps its face */
+}
+
+/* ---------- landing, Apple product-page style ---------- */
+body.is-landing {
+  & .brand {
+    font-family: var(--display); font-weight: 700; font-stretch: normal; text-transform: none;
+    letter-spacing: -0.05em; line-height: 0.9; padding-bottom: 0.06em;
+  }
+  & .brand span {
+    background: linear-gradient(180deg, #fff7ec 10%, #f6d2bd 60%, #e79a8c 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  & .hero__lede { font-family: var(--display); font-size: clamp(24px, 2.6vw, 32px); font-weight: 600; line-height: 1.18; letter-spacing: -0.024em; }
+  & .hero__body { font-size: 17px; line-height: 1.6; letter-spacing: -0.012em; }
+  & .btn--lg { height: 48px; padding: 0 28px; font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
+  & .btn--pop:hover:not(:disabled) { transform: scale(1.03); }
+  & .btn--pop:active:not(:disabled) { transform: scale(0.97); }
+  & .btn { transition: background var(--t-fast), box-shadow var(--t-fast), transform 420ms var(--spring, ease); }
+  & .facts { border-top: 0; gap: 14px; }
+  & .fact, & .fact + .fact { padding: 26px 26px 30px; border: 0; border-radius: 26px; background: var(--fill-1); box-shadow: inset 0 0 0 0.5px rgba(255, 240, 220, 0.1); }
+  & .fact h2 { font-family: var(--display); font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+  & .fact p { font-size: 15px; }
+  & .connect__row { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+body:not(.is-landing) {
+  --fill-1: rgba(255, 240, 220, 0.055);   /* grouped background */
+  --fill-2: rgba(255, 240, 220, 0.10);    /* controls */
+  --fill-3: rgba(255, 240, 220, 0.16);    /* pressed / hovered controls */
+  --sep: rgba(255, 240, 220, 0.09);
+  --glass: blur(40px) saturate(180%);
+  --switch-on: #34c46a;
+  --spring-soft: cubic-bezier(0.32, 1.28, 0.5, 1);
+  --hairline: 0 0 0 0.5px rgba(255, 240, 220, 0.16);
+  --lift: 0 40px 100px -24px rgba(0, 0, 0, 0.8);
+
+  /* The workspace is for long sessions, so it sits on a warm charcoal (like
+     Apple's dark mode) and crimson is only an accent. The landing keeps the
+     full moonlit crimson. */
+  --wine: #141113;
+  --wine-2: #1c181a;
+  --wine-3: #231e21;
+  --crimson-hi: #a3202b;
+  --material: rgba(34, 28, 31, 0.8);
+  --edge: rgba(255, 240, 220, 0.07);
+
+  font-size: 15px;
+  background: radial-gradient(80% 50% at 50% -20%, rgba(121, 11, 19, 0.16), transparent 70%), var(--wine);
+  background-attachment: fixed;
+  & .bar { background: rgba(20, 17, 19, 0.72); }
+
+  /* ---------- type ---------- */
+  & .stat__flag { white-space: nowrap; font-weight: 600; }
+  & .nav__link { font-size: 14px; font-weight: 500; }
+  & .slab__title {
+    font-family: var(--display); font-weight: 700; font-stretch: normal; text-transform: none;
+    font-size: clamp(34px, 4.2vw, 44px); line-height: 1.05; letter-spacing: -0.028em;
+  }
+  & .slab__sub { margin-top: 4px; font-size: 15px; }
+  & .section { padding-top: 44px; }
+  & .section__title { font-family: var(--display); font-size: 22px; font-weight: 700; letter-spacing: -0.022em; }
+  & .section__title .count { font-size: 15px; font-weight: 400; }
+
+  /* ---------- the summary card ---------- */
+  & .slab {
+    /* a charcoal card with a faint crimson glow in one corner, not a red slab */
+    background: radial-gradient(70% 90% at 0% 0%, rgba(150, 18, 28, 0.22), transparent 70%), #1e191c;
+    border-radius: 28px; padding: 30px 30px 24px; gap: 26px;
+    box-shadow: inset 0 0 0 0.5px rgba(255, 240, 220, 0.09), 0 30px 70px -34px rgba(0, 0, 0, 0.8);
+  }
+  & .stats { border-top: 0; gap: 10px; }
+  & .stat, & .stat + .stat {
+    padding: 14px 16px 16px; gap: 10px; border: 0; border-radius: 18px;
+    background: rgba(255, 240, 220, 0.04); transition: background var(--t-fast), transform 380ms var(--spring);
+  }
+  & .stat:hover { background: rgba(255, 240, 220, 0.07); }
+  & .stat.is-active { background: rgba(255, 240, 220, 0.14); box-shadow: inset 0 0 0 0.5px rgba(255, 240, 220, 0.3); }
+  & .stat::after { display: none; }
+  & .stat__label { font-size: 13px; font-weight: 600; letter-spacing: -0.005em; }
+  & .stat .swatch { border-radius: 50%; }
+  & .stat__value { font-family: var(--display); font-stretch: normal; font-size: clamp(30px, 3.6vw, 40px); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  & .mix { height: 5px; }
+
+  /* ---------- controls ---------- */
+  & .btn { height: 34px; padding: 0 16px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+  & .btn--sm { height: 30px; padding: 0 12px; font-size: 13px; }
+  & .btn--icon { width: 34px; padding: 0; }
+  & .btn--sm.btn--icon { width: 30px; }
+  & .btn--ghost { background: var(--fill-2); box-shadow: none; }
+  & .btn--ghost:hover:not(:disabled) { background: var(--fill-3); }
+  & .btn--danger { background: rgb(var(--s-dead-rgb) / 0.14); box-shadow: none; }
+  & .btn--danger:hover:not(:disabled) { background: rgb(var(--s-dead-rgb) / 0.22); }
+  & :is(.sheet__head, .drawer__head) [data-close] { width: 30px; height: 30px; border-radius: 50%; background: var(--fill-2); color: var(--ink-2); }
+  & :is(.sheet__head, .drawer__head) [data-close] svg { width: 13px; height: 13px; }
+
+  & .seg { padding: 2px; border-radius: 10px; background: var(--fill-1); box-shadow: none; }
+  & .seg__pill {
+    top: 2px; bottom: 2px; border-radius: 8px; background: rgba(255, 240, 220, 0.17);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 240, 220, 0.14), 0 3px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 420ms var(--spring-soft), width 420ms var(--spring-soft);
+  }
+  & .seg__opt { height: 28px; border-radius: 8px; padding: 0 12px; }
+
+  & .field-inline { height: 34px; border-radius: 10px; background: var(--fill-1); box-shadow: none; }
+  & .field-inline:focus-within { box-shadow: 0 0 0 3.5px rgba(255, 240, 220, 0.24); }
+  & .field-inline input { font-size: 14px; }
+
+  & .chip { background: var(--fill-1); box-shadow: none; }
+  & .chip:hover { background: var(--fill-2); }
+  & .chip[aria-pressed="true"] { background: var(--ivory); }
+
+  & .toggle { width: 42px; height: 26px; background: rgba(255, 240, 220, 0.16); box-shadow: none; }
+  & .toggle::after { top: 2px; left: 2px; width: 22px; height: 22px; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), 0 1px 1px rgba(0, 0, 0, 0.16); }
+  & .toggle[aria-checked="true"] { background: var(--switch-on); box-shadow: none; }
+  & .toggle[aria-checked="true"]::after { transform: translateX(16px); }
+  & .toggle:active::after { width: 27px; }
+  & .toggle[aria-checked="true"]:active::after { transform: translateX(11px); }
+
+  & .field > span { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  & .input, & .textarea { height: 40px; border-radius: 11px; background: var(--fill-1); box-shadow: none; font-size: 15px; transition: background var(--t-fast), box-shadow var(--t-fast); }
+  & .textarea { height: auto; font-size: 13px; }
+  & .input:hover, & .textarea:hover { background: var(--fill-2); box-shadow: none; }
+  & .input:focus, & .textarea:focus { background: var(--fill-1); box-shadow: 0 0 0 3.5px rgba(255, 240, 220, 0.26); }
+  & .input.is-invalid, & .textarea.is-invalid { box-shadow: 0 0 0 3.5px rgb(var(--s-dead-rgb) / 0.5); }
+
+  /* ---------- grouped inset lists ---------- */
+  & .table, & .sched { border-top: 0; border-radius: 20px; background: var(--fill-1); overflow: hidden; }
+  & .thead { height: 38px; padding: 0 20px; font-size: 12px; border-bottom: 0.5px solid var(--sep); }
+  & .row { height: 54px; padding: 0 20px; border-bottom: 0; }
+  & .row:hover, & .sched__row:hover { background: var(--fill-1); }
+  & .row.is-selected { background: rgba(255, 240, 220, 0.1); }
+  & :is(.row, .sched__row) + :is(.row, .sched__row)::before {
+    content: ""; position: absolute; top: 0; left: 20px; right: 0; height: 0.5px; background: var(--sep);
+  }
+  & .sched__row { position: relative; padding: 18px 20px; border-bottom: 0; }
+  & .skeleton, & .empty { border-bottom: 0; }
+  & .more { padding-top: 18px; }
+
+  & .status { gap: 6px; padding: 3px 10px 3px 8px; border-radius: var(--r-pill); font-size: 12.5px; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); }
+  & .status .dot { width: 6px; height: 6px; }
+  & .status[data-k="cancelled"] { color: var(--ink-2); }
+  & .status--chip { height: 26px; }
+  & .cell--type { font-weight: 600; }
+
+  & .cron span { border-radius: 7px; background: var(--fill-2); }
+  & .countdown__value { font-family: var(--display); font-stretch: normal; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+  & .countdown__bar { height: 3px; }
+
+  /* ---------- glass: sheet, inspector, scrim ---------- */
+  & .scrim { background: rgba(0, 0, 0, 0.42); }
+  & .sheet {
+    border-radius: 24px; background: var(--material);
+    -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass);
+    box-shadow: var(--hairline), var(--lift);
+    transform: translate(-50%, -46%) scale(0.94);
+    transition: opacity 220ms var(--ease), transform 520ms var(--spring-soft);
+  }
+  & .sheet.is-open { transform: translate(-50%, -50%); }
+  & .sheet__head { padding: 22px 22px 0; }
+  & .sheet__title { font-family: var(--display); font-size: 22px; letter-spacing: -0.025em; }
+  & .sheet__body { padding: 22px; }
+  & .sheet__foot { padding: 14px 22px; border-top: 0.5px solid var(--sep); }
+
+  & .drawer {
+    top: 10px; right: 10px; bottom: 10px; width: min(460px, calc(100vw - 20px));
+    border-radius: 26px; overflow: hidden; background: var(--material);
+    -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass);
+    box-shadow: var(--hairline), var(--lift);
+    transform: translateX(calc(100% + 24px));
+    transition: transform 560ms var(--spring-soft);
+  }
+  & .drawer.is-open { transform: none; }
+  & .drawer__head { padding: 22px 22px 14px; border-bottom: 0; }
+  & .drawer__title { font-family: var(--display); font-size: 28px; letter-spacing: -0.028em; }
+  & .drawer__body { padding: 8px 22px 22px; gap: 26px; }
+  & .drawer__foot { padding: 14px 22px 18px; border-top: 0.5px solid var(--sep); }
+  & .kv { padding: 16px 18px; border-radius: 16px; background: var(--fill-1); gap: 14px 18px; }
+  & .block__label { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 10px; }
+  & .code { border-radius: 14px; background: rgba(0, 0, 0, 0.24); box-shadow: none; }
+  & .code--error { background: rgb(var(--s-dead-rgb) / 0.08); }
+
+  /* ---------- toasts drop from the top like the Dynamic Island ---------- */
+  & .toasts { top: 10px; bottom: auto; }
+  & .toast {
+    padding: 7px 16px 7px 7px; gap: 10px; background: #060102; color: var(--ivory);
+    font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+    box-shadow: 0 0 0 0.5px rgba(255, 240, 220, 0.1), 0 18px 40px -14px rgba(0, 0, 0, 0.9);
+    animation: island-in 640ms var(--spring-soft) both;
+  }
+  & .toast.is-error { padding-left: 16px; }
+  & .toast.is-error .dot { background: var(--s-dead); }
+  & .toast.is-out { animation: island-out 280ms var(--ease) forwards; }
+  & .toast__check { width: 24px; height: 24px; background: var(--switch-on); color: #fff; }
+  & .toast__check svg { width: 13px; height: 13px; }
+}
+
+@keyframes island-in {
+  0% { opacity: 0; transform: translateY(-14px) scale(0.55, 0.7); }
+  35% { opacity: 1; }
+  100% { transform: none; }
+}
+@keyframes island-out { to { opacity: 0; transform: translateY(-10px) scale(0.88); } }
+
+/* ---------- phones: bottom sheets with a grabber ---------- */
+@media (max-width: 720px) {
+  body:not(.is-landing) {
+    & .slab { padding: 22px 18px 18px; border-radius: 24px; }
+    & .stat, & .stat + .stat { padding: 12px 14px 14px; }
+    & .row { padding: 10px 16px; height: auto; }
+    & :is(.row, .sched__row) + :is(.row, .sched__row)::before { left: 16px; }
+    & .sched__row { padding: 16px; }
+    & :is(.sheet, .drawer) {
+      top: auto; left: 0; right: 0; bottom: 0; width: 100vw; border-radius: 26px 26px 0 0;
+      transform: translateY(100%); padding-top: 8px;
+    }
+    & :is(.sheet, .drawer).is-open { transform: none; }
+    & :is(.sheet, .drawer)::before {
+      content: ""; position: absolute; top: 7px; left: 50%; width: 36px; height: 5px; margin-left: -18px;
+      border-radius: 3px; background: rgba(255, 240, 220, 0.28);
+    }
+  }
+}

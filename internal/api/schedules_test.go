@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 func (f *fakeStore) CreateSchedule(_ context.Context, n store.NewSchedule) (store.Schedule, error) {

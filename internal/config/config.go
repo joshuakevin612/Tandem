@@ -34,7 +34,7 @@ type Config struct {
 
 func Load() Config {
 	return Config{
-		DatabaseURL:       str("DATABASE_URL", "postgres://taskq:taskq@localhost:5432/taskq?sslmode=disable"),
+		DatabaseURL:       str("DATABASE_URL", "postgres://tandem:tandem@localhost:5432/tandem?sslmode=disable"),
 		HTTPAddr:          str("HTTP_ADDR", ":8080"),
 		WorkerQueues:      list("WORKER_QUEUES", "default"),
 		WorkerConcurrency: num("WORKER_CONCURRENCY", 10),

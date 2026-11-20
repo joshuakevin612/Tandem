@@ -7,8 +7,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"taskq/internal/redisx"
-	"taskq/internal/redisx/redistest"
+	"tandem/internal/redisx"
+	"tandem/internal/redisx/redistest"
 )
 
 func TestPublishSubscribe(t *testing.T) {

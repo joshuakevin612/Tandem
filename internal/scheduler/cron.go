@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"taskq/internal/cronexpr"
-	"taskq/internal/metrics"
-	"taskq/internal/store"
+	"tandem/internal/cronexpr"
+	"tandem/internal/metrics"
+	"tandem/internal/store"
 )
 
 // CronStore is the subset of store.Store the cron runner uses.

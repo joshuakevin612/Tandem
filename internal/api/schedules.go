@@ -9,8 +9,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"taskq/internal/cronexpr"
-	"taskq/internal/store"
+	"tandem/internal/cronexpr"
+	"tandem/internal/store"
 )
 
 type scheduleRequest struct {

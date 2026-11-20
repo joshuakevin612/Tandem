@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 
-	"taskq/internal/redisx/redistest"
-	"taskq/internal/store"
+	"tandem/internal/redisx/redistest"
+	"tandem/internal/store"
 )
 
 func sample(status string) store.Job {

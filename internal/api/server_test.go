@@ -15,7 +15,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 type fakeStore struct {

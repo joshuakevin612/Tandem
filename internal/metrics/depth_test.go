@@ -14,7 +14,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 // The Postgres container starts lazily so tests that need no DB run without Docker.
@@ -38,7 +38,7 @@ func testStore(t *testing.T) *store.Store {
 	pgOnce.Do(func() {
 		ctx := context.Background()
 		pgC, pgErr = postgres.Run(ctx, "postgres:17",
-			postgres.WithDatabase("taskq"), postgres.WithUsername("taskq"), postgres.WithPassword("taskq"), postgres.BasicWaitStrategies())
+			postgres.WithDatabase("tandem"), postgres.WithUsername("tandem"), postgres.WithPassword("tandem"), postgres.BasicWaitStrategies())
 		if pgErr != nil {
 			return
 		}
@@ -121,7 +121,7 @@ func TestQueueDepthAgainstPostgres(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, mf := range mfs {
-			if mf.GetName() != "taskq_jobs" {
+			if mf.GetName() != "tandem_jobs" {
 				continue
 			}
 			for _, m := range mf.GetMetric() {
@@ -139,7 +139,7 @@ func TestQueueDepthAgainstPostgres(t *testing.T) {
 				}
 			}
 		}
-		t.Fatalf("no taskq_jobs series for %s/%s", q, status)
+		t.Fatalf("no tandem_jobs series for %s/%s", q, status)
 		return 0
 	}
 
@@ -158,7 +158,7 @@ func TestQueueDepthAgainstPostgres(t *testing.T) {
 	}
 	var age float64 = -1
 	for _, mf := range mfs {
-		if mf.GetName() == "taskq_oldest_queued_job_age_seconds" {
+		if mf.GetName() == "tandem_oldest_queued_job_age_seconds" {
 			for _, m := range mf.GetMetric() {
 				if m.GetLabel()[0].GetValue() == q {
 					age = m.GetGauge().GetValue()

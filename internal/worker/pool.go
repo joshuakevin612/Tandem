@@ -13,9 +13,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"taskq/internal/metrics"
-	"taskq/internal/queue"
-	"taskq/internal/store"
+	"tandem/internal/metrics"
+	"tandem/internal/queue"
+	"tandem/internal/store"
 )
 
 // Store is the subset of store.Store the pool uses.

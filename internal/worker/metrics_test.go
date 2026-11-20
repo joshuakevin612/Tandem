@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"taskq/internal/metrics"
-	"taskq/internal/store"
+	"tandem/internal/metrics"
+	"tandem/internal/store"
 )
 
 // histCount sums the observation count of every series of the named histogram
@@ -89,14 +89,14 @@ func TestMetricsRecordedForCompletedAndFailedJobs(t *testing.T) {
 		{map[string]string{"type": "x", "outcome": "retried"}, 1},
 		{map[string]string{"type": "unknown"}, 1},
 	} {
-		if got := histCount(t, mreg, "taskq_attempt_duration_seconds", tc.labels); got != tc.want {
+		if got := histCount(t, mreg, "tandem_attempt_duration_seconds", tc.labels); got != tc.want {
 			t.Errorf("attempt count %v = %d, want %d", tc.labels, got, tc.want)
 		}
 	}
-	if got := gaugeValue(t, mreg, "taskq_in_flight_jobs"); got != 0 {
+	if got := gaugeValue(t, mreg, "tandem_in_flight_jobs"); got != 0 {
 		t.Errorf("in_flight_jobs = %v, want 0", got)
 	}
-	if got := histCount(t, mreg, "taskq_lease_duration_seconds", map[string]string{"queue": "default"}); got == 0 {
+	if got := histCount(t, mreg, "tandem_lease_duration_seconds", map[string]string{"queue": "default"}); got == 0 {
 		t.Error("lease duration not observed")
 	}
 }

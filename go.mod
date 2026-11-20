@@ -1,4 +1,4 @@
-module taskq
+module tandem
 
 go 1.27.4
 

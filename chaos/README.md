@@ -1,4 +1,4 @@
-# taskq chaos test
+# tandem chaos test
 
 Proves at-least-once execution: with workers (and the reaper) SIGKILLed every few
 seconds while 20k jobs flow through, no job is lost, duplicated at submit, or left

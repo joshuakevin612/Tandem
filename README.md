@@ -4,7 +4,7 @@ A distributed task execution platform (a small Celery): clients submit jobs over
 
 The guarantee is **at-least-once execution: a job the API accepted (HTTP 202) is never lost or left stuck, even when workers are SIGKILLed mid-job.** Duplicate executions can happen and are made safe by lease fencing (a worker that lost its lease cannot write a result) and idempotency keys (submit replays return the original job). **Exactly-once is explicitly not promised**; see [DESIGN.md](DESIGN.md) for why.
 
-(The Go module and binaries are still named `taskq`; Tandem is the project name.)
+(The Go module and binaries are still named `tandem`; Tandem is the project name.)
 
 ## Architecture
 
@@ -28,7 +28,7 @@ flowchart LR
 
 Solid lines are the correctness path; dotted lines are optional or observational. Redis carries three best-effort features (per-tenant submit rate limit, terminal-job status cache, enqueue wake-ups). With `REDIS_URL` unset, or Redis down, the system keeps working: workers poll, nothing is cached, nothing is rate limited. Prometheus scrapes the API replicas directly, because nginx deliberately returns 404 for `/metrics`.
 
-One Go module, one Docker image, three service binaries selected by the compose `command` (`api`, `worker`, `scheduler`), plus `taskq-admin` (API keys) and `chaos` (the failure test).
+One Go module, one Docker image, three service binaries selected by the compose `command` (`api`, `worker`, `scheduler`), plus `tandem-admin` (API keys) and `chaos` (the failure test).
 
 ## How it works
 
@@ -84,8 +84,8 @@ Needs Docker. Everything below was run against this repo's compose files.
 docker compose -f deploy/docker-compose.yml up -d --build
 
 # 2. Create an API key (printed once; the compose stack runs with AUTH_MODE=apikey)
-docker compose -f deploy/docker-compose.yml exec api taskq-admin create-key -tenant demo -name quickstart
-export API_KEY=tq_...   # paste the key it printed
+docker compose -f deploy/docker-compose.yml exec api tandem-admin create-key -tenant demo -name quickstart
+export API_KEY=td_...   # paste the key it printed
 
 # 3. Submit a job (202 Accepted)
 curl -s -X POST localhost:8080/v1/jobs \
@@ -110,7 +110,7 @@ Tear down with `docker compose -f deploy/docker-compose.yml down -v`. To reprodu
 
 ## API
 
-Authentication: `Authorization: Bearer tq_...` or `X-API-Key`. The tenant comes from the key. With `AUTH_MODE=header` (the binary's default, used by the chaos override) the tenant is the unauthenticated `X-Tenant-ID` header; that is for development only. Cross-tenant access returns 404, not 403.
+Authentication: `Authorization: Bearer td_...` or `X-API-Key`. The tenant comes from the key. With `AUTH_MODE=header` (the binary's default, used by the chaos override) the tenant is the unauthenticated `X-Tenant-ID` header; that is for development only. Cross-tenant access returns 404, not 403.
 
 | Method and path | Purpose |
 | --- | --- |
@@ -150,7 +150,7 @@ All configuration is environment variables with defaults in [`internal/config/co
 
 ```
 cmd/api, cmd/worker, cmd/scheduler   service binaries
-cmd/taskq-admin                      API key management (create-key, revoke-key, list-keys)
+cmd/tandem-admin                      API key management (create-key, revoke-key, list-keys)
 cmd/chaos                            SIGKILL failure test with invariant checker
 internal/store                       all SQL state transitions and migrations (the core)
 internal/worker                      lease loop, heartbeats, handler registry, built-in handlers

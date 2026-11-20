@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 // startPool runs a pool with a short lease and heartbeat and returns a stop

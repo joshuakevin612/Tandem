@@ -16,7 +16,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 // The Postgres container starts lazily so unit tests need no Docker.
@@ -40,7 +40,7 @@ func testDSN(t *testing.T) string {
 	pgOnce.Do(func() {
 		ctx := context.Background()
 		pgC, pgErr = postgres.Run(ctx, "postgres:17",
-			postgres.WithDatabase("taskq"), postgres.WithUsername("taskq"), postgres.WithPassword("taskq"), postgres.BasicWaitStrategies())
+			postgres.WithDatabase("tandem"), postgres.WithUsername("tandem"), postgres.WithPassword("tandem"), postgres.BasicWaitStrategies())
 		if pgErr != nil {
 			return
 		}

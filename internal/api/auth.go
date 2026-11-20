@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 // Auth modes selected by AUTH_MODE.
@@ -20,7 +20,7 @@ const (
 
 const (
 	apiKeyHeader     = "X-API-Key"
-	apiKeyPrefix     = "tq_"
+	apiKeyPrefix     = "td_"
 	defaultAuthCache = 30 * time.Second
 )
 
@@ -69,7 +69,7 @@ type apiKeyAuth struct {
 	cache map[[sha256.Size]byte]cacheEntry
 }
 
-// APIKeyAuth authenticates requests by `Authorization: Bearer tq_...` or
+// APIKeyAuth authenticates requests by `Authorization: Bearer td_...` or
 // `X-API-Key`. The tenant comes only from the key; X-Tenant-ID is ignored.
 //
 // Only successful lookups are cached (hash -> tenant, ~30s TTL), so a revoked

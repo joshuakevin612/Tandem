@@ -7,14 +7,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"taskq/internal/config"
-	"taskq/internal/metrics"
-	"taskq/internal/queue"
-	"taskq/internal/redisx"
-	"taskq/internal/store"
-	"taskq/internal/wake"
-	"taskq/internal/worker"
-	"taskq/internal/worker/handlers"
+	"tandem/internal/config"
+	"tandem/internal/metrics"
+	"tandem/internal/queue"
+	"tandem/internal/redisx"
+	"tandem/internal/store"
+	"tandem/internal/wake"
+	"tandem/internal/worker"
+	"tandem/internal/worker/handlers"
 )
 
 func main() {

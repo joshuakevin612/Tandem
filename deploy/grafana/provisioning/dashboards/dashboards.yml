@@ -1,6 +1,6 @@
 apiVersion: 1
 providers:
-  - name: taskq
+  - name: tandem
     type: file
     disableDeletion: true
     options:

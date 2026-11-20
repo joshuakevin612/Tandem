@@ -15,7 +15,7 @@ import (
 )
 
 // Channel is the pub/sub channel; the payload is the queue name.
-const Channel = "taskq:enqueue"
+const Channel = "tandem:enqueue"
 
 const publishTimeout = 100 * time.Millisecond
 

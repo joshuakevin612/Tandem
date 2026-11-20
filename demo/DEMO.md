@@ -17,7 +17,7 @@ docker compose $C ps          # wait until api-1 and api-2 are healthy
 go vet ./cmd/chaos            # optional: warms the Go build cache so `go run` starts fast on camera
 ```
 
-Open two windows side by side: a terminal (large font) and a browser at **http://localhost:3000/d/taskq**. Set the dashboard time range to "Last 5 minutes"; it refreshes every 5 s on its own. Grafana is anonymous Viewer, so no login screen.
+Open two windows side by side: a terminal (large font) and a browser at **http://localhost:3000/d/tandem**. Set the dashboard time range to "Last 5 minutes"; it refreshes every 5 s on its own. Grafana is anonymous Viewer, so no login screen.
 
 Starting from a fresh stack (`down -v`, then `up`) gives clean graphs, because Prometheus keeps its data only in the container.
 
@@ -54,17 +54,17 @@ Timing note: in a rehearsal, 40,000 jobs took 42 s end to end including my manua
 
 | Panel | Metric | In this demo |
 | --- | --- | --- |
-| Queue depth by status | `taskq_jobs{queue,status}` | Queued rises with submits and falls as workers drain; stalls while workers are down. `succeeded` and `dead` climb too. |
-| Oldest queued job age | `taskq_oldest_queued_job_age_seconds` | Climbs while no worker is leasing, falls after restart. |
-| Submit rate and 429 rate | `taskq_jobs_submitted_total`, `taskq_rate_limited_total` | The chaos override turns the limiter off, so 429 stays at zero. |
-| In-flight jobs per worker | `taskq_in_flight_jobs` | One line per worker at the concurrency cap (20 here); lines stop when a worker is killed. |
-| Attempts/sec by outcome | `taskq_attempt_duration_seconds_count` by outcome | `succeeded`, `retried` (flaky jobs), `dead`, `lease_lost` (the pause step). A SIGKILLed worker reports nothing, so the kill itself appears as a drop, not as a series. |
-| Reaped jobs rate | `taskq_reaped_jobs_total` | Spikes about one lease (5 s) after the kill, when expired leases are reclaimed. |
+| Queue depth by status | `tandem_jobs{queue,status}` | Queued rises with submits and falls as workers drain; stalls while workers are down. `succeeded` and `dead` climb too. |
+| Oldest queued job age | `tandem_oldest_queued_job_age_seconds` | Climbs while no worker is leasing, falls after restart. |
+| Submit rate and 429 rate | `tandem_jobs_submitted_total`, `tandem_rate_limited_total` | The chaos override turns the limiter off, so 429 stays at zero. |
+| In-flight jobs per worker | `tandem_in_flight_jobs` | One line per worker at the concurrency cap (20 here); lines stop when a worker is killed. |
+| Attempts/sec by outcome | `tandem_attempt_duration_seconds_count` by outcome | `succeeded`, `retried` (flaky jobs), `dead`, `lease_lost` (the pause step). A SIGKILLed worker reports nothing, so the kill itself appears as a drop, not as a series. |
+| Reaped jobs rate | `tandem_reaped_jobs_total` | Spikes about one lease (5 s) after the kill, when expired leases are reclaimed. |
 | Lease latency p95, Attempt duration p95, API latency | histograms | Context. Lease latency stays small unless the database is saturated. |
-| Status cache hit ratio | `taskq_status_cache_requests_total` | Empty in this demo; nothing reads job status. |
-| Wake-ups rate | `taskq_wakeups_total` | Idle workers cut short by Redis wake-ups. |
+| Status cache hit ratio | `tandem_status_cache_requests_total` | Empty in this demo; nothing reads job status. |
+| Wake-ups rate | `tandem_wakeups_total` | Idle workers cut short by Redis wake-ups. |
 
-`taskq_heartbeat_lost_leases_total` (leases a live worker found it had lost) is exported but has no dashboard panel; the `lease_lost` outcome in Attempts/sec is the visible signal.
+`tandem_heartbeat_lost_leases_total` (leases a live worker found it had lost) is exported but has no dashboard panel; the `lease_lost` outcome in Attempts/sec is the visible signal.
 
 ## After recording
 

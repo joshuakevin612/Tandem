@@ -1,4 +1,4 @@
-// Package metrics defines taskq's Prometheus metrics.
+// Package metrics defines tandem's Prometheus metrics.
 //
 // Each binary builds its own *prometheus.Registry (never the global default,
 // so tests can construct many without re-registration collisions) and the
@@ -72,11 +72,11 @@ type API struct {
 func NewAPI(reg prometheus.Registerer) *API {
 	f := promauto.With(reg)
 	return &API{
-		requests:      f.NewCounterVec(prometheus.CounterOpts{Name: "taskq_http_requests_total", Help: "HTTP requests by route pattern, method and status code."}, []string{"route", "method", "code"}),
-		duration:      f.NewHistogramVec(prometheus.HistogramOpts{Name: "taskq_http_request_duration_seconds", Help: "HTTP request latency by route pattern and method.", Buckets: prometheus.DefBuckets}, []string{"route", "method"}),
-		submitted:     f.NewCounterVec(prometheus.CounterOpts{Name: "taskq_jobs_submitted_total", Help: "Jobs accepted by POST /v1/jobs (idempotent replays included)."}, []string{"queue"}),
-		rateLimited:   f.NewCounter(prometheus.CounterOpts{Name: "taskq_rate_limited_total", Help: "Submits rejected with 429."}),
-		statusCacheRq: f.NewCounterVec(prometheus.CounterOpts{Name: "taskq_status_cache_requests_total", Help: "Job status cache lookups."}, []string{"result"}),
+		requests:      f.NewCounterVec(prometheus.CounterOpts{Name: "tandem_http_requests_total", Help: "HTTP requests by route pattern, method and status code."}, []string{"route", "method", "code"}),
+		duration:      f.NewHistogramVec(prometheus.HistogramOpts{Name: "tandem_http_request_duration_seconds", Help: "HTTP request latency by route pattern and method.", Buckets: prometheus.DefBuckets}, []string{"route", "method"}),
+		submitted:     f.NewCounterVec(prometheus.CounterOpts{Name: "tandem_jobs_submitted_total", Help: "Jobs accepted by POST /v1/jobs (idempotent replays included)."}, []string{"queue"}),
+		rateLimited:   f.NewCounter(prometheus.CounterOpts{Name: "tandem_rate_limited_total", Help: "Submits rejected with 429."}),
+		statusCacheRq: f.NewCounterVec(prometheus.CounterOpts{Name: "tandem_status_cache_requests_total", Help: "Job status cache lookups."}, []string{"result"}),
 	}
 }
 
@@ -135,12 +135,12 @@ type Worker struct {
 func NewWorker(reg prometheus.Registerer) *Worker {
 	f := promauto.With(reg)
 	return &Worker{
-		leaseDuration: f.NewHistogramVec(prometheus.HistogramOpts{Name: "taskq_lease_duration_seconds", Help: "Duration of the LeaseJobs call.", Buckets: []float64{.001, .0025, .005, .01, .025, .05, .1, .25, .5, 1, 2.5}}, []string{"queue"}),
-		leased:        f.NewCounterVec(prometheus.CounterOpts{Name: "taskq_jobs_leased_total", Help: "Jobs leased by this worker."}, []string{"queue"}),
-		attempt:       f.NewHistogramVec(prometheus.HistogramOpts{Name: "taskq_attempt_duration_seconds", Help: "Handler run time per attempt by type and outcome.", Buckets: []float64{.01, .05, .1, .5, 1, 5, 15, 60, 300, 900}}, []string{"type", "outcome"}),
-		inFlight:      f.NewGauge(prometheus.GaugeOpts{Name: "taskq_in_flight_jobs", Help: "Jobs currently held by this worker."}),
-		lostLeases:    f.NewCounter(prometheus.CounterOpts{Name: "taskq_heartbeat_lost_leases_total", Help: "Leases found lost (reaped, cancelled or unconfirmable) by the heartbeat."}),
-		wakeups:       f.NewCounter(prometheus.CounterOpts{Name: "taskq_wakeups_total", Help: "Idle polls cut short by a wake-up hint."}),
+		leaseDuration: f.NewHistogramVec(prometheus.HistogramOpts{Name: "tandem_lease_duration_seconds", Help: "Duration of the LeaseJobs call.", Buckets: []float64{.001, .0025, .005, .01, .025, .05, .1, .25, .5, 1, 2.5}}, []string{"queue"}),
+		leased:        f.NewCounterVec(prometheus.CounterOpts{Name: "tandem_jobs_leased_total", Help: "Jobs leased by this worker."}, []string{"queue"}),
+		attempt:       f.NewHistogramVec(prometheus.HistogramOpts{Name: "tandem_attempt_duration_seconds", Help: "Handler run time per attempt by type and outcome.", Buckets: []float64{.01, .05, .1, .5, 1, 5, 15, 60, 300, 900}}, []string{"type", "outcome"}),
+		inFlight:      f.NewGauge(prometheus.GaugeOpts{Name: "tandem_in_flight_jobs", Help: "Jobs currently held by this worker."}),
+		lostLeases:    f.NewCounter(prometheus.CounterOpts{Name: "tandem_heartbeat_lost_leases_total", Help: "Leases found lost (reaped, cancelled or unconfirmable) by the heartbeat."}),
+		wakeups:       f.NewCounter(prometheus.CounterOpts{Name: "tandem_wakeups_total", Help: "Idle polls cut short by a wake-up hint."}),
 	}
 }
 
@@ -193,8 +193,8 @@ type Scheduler struct {
 func NewScheduler(reg prometheus.Registerer) *Scheduler {
 	f := promauto.With(reg)
 	return &Scheduler{
-		reaped: f.NewCounter(prometheus.CounterOpts{Name: "taskq_reaped_jobs_total", Help: "Jobs reclaimed from expired leases (requeued or dead)."}),
-		fires:  f.NewCounter(prometheus.CounterOpts{Name: "taskq_schedule_fires_total", Help: "Schedule fires that created a job on this replica."}),
+		reaped: f.NewCounter(prometheus.CounterOpts{Name: "tandem_reaped_jobs_total", Help: "Jobs reclaimed from expired leases (requeued or dead)."}),
+		fires:  f.NewCounter(prometheus.CounterOpts{Name: "tandem_schedule_fires_total", Help: "Schedule fires that created a job on this replica."}),
 	}
 }
 

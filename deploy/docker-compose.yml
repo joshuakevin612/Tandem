@@ -1,11 +1,11 @@
-name: taskq
+name: tandem
 
 x-app: &app
   build:
     context: ..
     dockerfile: Dockerfile
   environment: &env
-    DATABASE_URL: postgres://taskq:taskq@postgres:5432/taskq?sslmode=disable
+    DATABASE_URL: postgres://tandem:tandem@postgres:5432/tandem?sslmode=disable
     REDIS_URL: redis://redis:6379/0
   depends_on: &deps
     postgres:
@@ -17,15 +17,15 @@ services:
   postgres:
     image: postgres:17
     environment:
-      POSTGRES_USER: taskq
-      POSTGRES_PASSWORD: taskq
-      POSTGRES_DB: taskq
+      POSTGRES_USER: tandem
+      POSTGRES_PASSWORD: tandem
+      POSTGRES_DB: tandem
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U taskq -d taskq"]
+      test: ["CMD-SHELL", "pg_isready -U tandem -d tandem"]
       interval: 3s
       timeout: 3s
       retries: 20
@@ -102,7 +102,7 @@ services:
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true" # dev only
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/taskq.json
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/tandem.json
     ports:
       - "3000:3000"
     volumes:

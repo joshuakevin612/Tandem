@@ -9,7 +9,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"taskq/internal/redisx/redistest"
+	"tandem/internal/redisx/redistest"
 )
 
 func TestBurstThenDenied(t *testing.T) {
