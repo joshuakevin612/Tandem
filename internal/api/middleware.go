@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"taskq/internal/metrics"
+	"tandem/internal/metrics"
 )
 
 type ctxKey struct{}

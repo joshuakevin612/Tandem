@@ -1,4 +1,4 @@
-// Command chaos proves taskq's at-least-once guarantee under worker/scheduler
+// Command chaos proves tandem's at-least-once guarantee under worker/scheduler
 // SIGKILLs. See chaos/README.md.
 package main
 
@@ -26,14 +26,14 @@ const (
 	kindSleep  = "sleep"
 	kindFlaky  = "flaky50"
 	kindDead   = "flaky100"
-	project    = "taskq"
+	project    = "tandem"
 	maxAttempt = 5
 	clients    = 50
 )
 
 var (
 	apiURL    = flag.String("api", "http://localhost:8080", "API base URL")
-	dsn       = flag.String("dsn", "postgres://taskq:taskq@localhost:5432/taskq?sslmode=disable", "Postgres DSN")
+	dsn       = flag.String("dsn", "postgres://tandem:tandem@localhost:5432/tandem?sslmode=disable", "Postgres DSN")
 	numJobs   = flag.Int("jobs", 20000, "jobs to submit")
 	killEvery = flag.Duration("kill-every", 3*time.Second, "interval between kill rounds")
 	timeout   = flag.Duration("timeout", 5*time.Minute, "overall timeout (submit + drain)")

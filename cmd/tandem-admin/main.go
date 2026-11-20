@@ -1,8 +1,8 @@
-// Command taskq-admin manages API keys. It uses DATABASE_URL like the other binaries.
+// Command tandem-admin manages API keys. It uses DATABASE_URL like the other binaries.
 //
-//	taskq-admin create-key -tenant X -name Y   (prints the key once)
-//	taskq-admin revoke-key -id UUID
-//	taskq-admin list-keys  -tenant X
+//	tandem-admin create-key -tenant X -name Y   (prints the key once)
+//	tandem-admin revoke-key -id UUID
+//	tandem-admin list-keys  -tenant X
 package main
 
 import (
@@ -19,19 +19,19 @@ import (
 
 	"github.com/google/uuid"
 
-	"taskq/internal/config"
-	"taskq/internal/store"
+	"tandem/internal/config"
+	"tandem/internal/store"
 )
 
 const prefixLen = 8
 
-// newKey returns "tq_" + base64url(32 random bytes).
+// newKey returns "td_" + base64url(32 random bytes).
 func newKey() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	return "tq_" + base64.RawURLEncoding.EncodeToString(b), nil
+	return "td_" + base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 func main() {
@@ -101,7 +101,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: taskq-admin create-key -tenant X [-name Y] | revoke-key -id UUID | list-keys -tenant X")
+	fmt.Fprintln(os.Stderr, "usage: tandem-admin create-key -tenant X [-name Y] | revoke-key -id UUID | list-keys -tenant X")
 	os.Exit(2)
 }
 

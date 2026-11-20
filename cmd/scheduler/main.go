@@ -8,10 +8,10 @@ import (
 	"sync"
 	"syscall"
 
-	"taskq/internal/config"
-	"taskq/internal/metrics"
-	"taskq/internal/scheduler"
-	"taskq/internal/store"
+	"tandem/internal/config"
+	"tandem/internal/metrics"
+	"tandem/internal/scheduler"
+	"tandem/internal/store"
 )
 
 // schedulerLeaderKey is the advisory-lock key for the cron leader ("TQCRON").

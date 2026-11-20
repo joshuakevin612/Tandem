@@ -12,14 +12,14 @@ import (
 	"syscall"
 	"time"
 
-	"taskq/internal/api"
-	"taskq/internal/config"
-	"taskq/internal/metrics"
-	"taskq/internal/ratelimit"
-	"taskq/internal/redisx"
-	"taskq/internal/statuscache"
-	"taskq/internal/store"
-	"taskq/internal/wake"
+	"tandem/internal/api"
+	"tandem/internal/config"
+	"tandem/internal/metrics"
+	"tandem/internal/ratelimit"
+	"tandem/internal/redisx"
+	"tandem/internal/statuscache"
+	"tandem/internal/store"
+	"tandem/internal/wake"
 )
 
 // healthcheck probes /readyz on the local listener for the distroless image,

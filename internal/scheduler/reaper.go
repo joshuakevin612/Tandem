@@ -7,7 +7,7 @@ import (
 	"math/rand/v2"
 	"time"
 
-	"taskq/internal/metrics"
+	"tandem/internal/metrics"
 )
 
 // ReaperStore is the subset of store.Store the reaper uses.

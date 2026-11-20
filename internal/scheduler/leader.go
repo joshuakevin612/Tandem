@@ -6,7 +6,7 @@ import (
 	"math/rand/v2"
 	"time"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 // Lock is a held leadership lock.

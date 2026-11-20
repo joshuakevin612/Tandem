@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 // Handler runs one job. Returning nil completes it; an error fails it.

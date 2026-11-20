@@ -8,7 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 // DepthSource is the subset of store.Store the depth collector uses.
@@ -20,8 +20,8 @@ type DepthSource interface {
 // instead of vanishing.
 var jobStatuses = []string{"queued", "running", "succeeded", "failed", "dead", "cancelled"}
 
-// QueueDepth exposes taskq_jobs{queue,status} and
-// taskq_oldest_queued_job_age_seconds{queue} from the database at scrape time.
+// QueueDepth exposes tandem_jobs{queue,status} and
+// tandem_oldest_queued_job_age_seconds{queue} from the database at scrape time.
 //
 // Register it in exactly one binary (the scheduler): every replica would
 // otherwise export identical series. Results are cached for TTL and the query
@@ -44,8 +44,8 @@ type QueueDepth struct {
 func NewQueueDepth(src DepthSource, log *slog.Logger) *QueueDepth {
 	return &QueueDepth{
 		Source: src, Logger: log,
-		jobs: prometheus.NewDesc("taskq_jobs", "Jobs per queue and status.", []string{"queue", "status"}, nil),
-		age:  prometheus.NewDesc("taskq_oldest_queued_job_age_seconds", "Age of the oldest queued job that is already runnable.", []string{"queue"}, nil),
+		jobs: prometheus.NewDesc("tandem_jobs", "Jobs per queue and status.", []string{"queue", "status"}, nil),
+		age:  prometheus.NewDesc("tandem_oldest_queued_job_age_seconds", "Age of the oldest queued job that is already runnable.", []string{"queue"}, nil),
 	}
 }
 

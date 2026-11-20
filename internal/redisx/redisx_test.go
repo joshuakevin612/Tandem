@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"taskq/internal/redisx/redistest"
+	"tandem/internal/redisx/redistest"
 )
 
 func TestNewEmptyIsNil(t *testing.T) {

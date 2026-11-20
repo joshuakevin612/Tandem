@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 func job(payload string) store.Job { return store.Job{Payload: []byte(payload)} }

@@ -12,8 +12,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"taskq/internal/queue"
-	"taskq/internal/store"
+	"tandem/internal/queue"
+	"tandem/internal/store"
 )
 
 // startCfg runs a pool built from cfg (with test defaults filled in).

@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))

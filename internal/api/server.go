@@ -19,8 +19,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"taskq/internal/metrics"
-	"taskq/internal/store"
+	"tandem/internal/metrics"
+	"tandem/internal/store"
+	"tandem/internal/web"
 )
 
 const (
@@ -107,6 +108,11 @@ func NewServer(st JobStore, logger *slog.Logger, opts ...Option) http.Handler {
 	if deps.MetricsHandler != nil {
 		r.Method(http.MethodGet, "/metrics", deps.MetricsHandler)
 	}
+	// The web console is static and public: the page itself asks the user for
+	// an API key and sends it on /v1 calls. Mounted outside the auth group.
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/ui/", http.StatusFound) })
+	r.Get("/ui", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/ui/", http.StatusMovedPermanently) })
+	r.Handle("/ui/*", web.Handler())
 	r.Group(func(r chi.Router) {
 		r.Use(deps.Auth)
 		r.Post("/v1/jobs", s.createJob)

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"taskq/internal/store"
-	"taskq/internal/worker"
+	"tandem/internal/store"
+	"tandem/internal/worker"
 )
 
 const maxDrain = 1 << 20 // response bytes read before the connection is dropped

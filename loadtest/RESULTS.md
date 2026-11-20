@@ -35,11 +35,11 @@ Notes on the numbers:
 
 I queried the same Prometheus series the dashboard panels use (peaks over the
 runs); I did not visually inspect the rendered panels. Grafana provisioning was
-verified through its API (`/api/search` lists the `taskq` dashboard; it has 11 panels).
+verified through its API (`/api/search` lists the `tandem` dashboard; it has 11 panels).
 
 - Submit rate peaked at ~1,000/s (15 s window); worker `succeeded` attempts/s peaked at
   ~1,010/s, so workers kept pace with submits.
-- Queue depth (`max by (queue,status)(taskq_jobs{status="queued"})`) peaked at 258
+- Queue depth (`max by (queue,status)(tandem_jobs{status="queued"})`) peaked at 258
   and oldest queued job age at 0.25 s: no meaningful backlog even at 1000/s.
 - In-flight jobs per worker reached the concurrency cap of 10.
 - Lease latency p95 peaked at ~4.7 ms; attempt duration p95 for `sleep` ~98 ms

@@ -9,13 +9,13 @@ avoids Docker Desktop host-networking quirks on Windows; no k6 install needed.
 docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.loadtest.yml up -d --build
 
 # 2. mint a key (printed once)
-docker compose -f deploy/docker-compose.yml exec api taskq-admin create-key -tenant load -name k6
-export API_KEY=tq_...
+docker compose -f deploy/docker-compose.yml exec api tandem-admin create-key -tenant load -name k6
+export API_KEY=td_...
 
-# 3. run (network name is <compose project>_default, i.e. taskq_default)
-docker run --rm -i --network taskq_default -e API_KEY=$API_KEY -e RATE=200 -e DURATION=40 \
+# 3. run (network name is <compose project>_default, i.e. tandem_default)
+docker run --rm -i --network tandem_default -e API_KEY=$API_KEY -e RATE=200 -e DURATION=40 \
   grafana/k6 run - < loadtest/submit.js
-docker run --rm -i --network taskq_default -e API_KEY=$API_KEY -e RATE=50 -e DURATION=50 \
+docker run --rm -i --network tandem_default -e API_KEY=$API_KEY -e RATE=50 -e DURATION=50 \
   grafana/k6 run - < loadtest/e2e.js
 ```
 

@@ -17,9 +17,9 @@ func TestAPIKeyLifecycle(t *testing.T) {
 	if _, err := s.pool.Exec(ctx, `TRUNCATE api_keys`); err != nil {
 		t.Fatal(err)
 	}
-	h := sha256.Sum256([]byte("tq_secret"))
+	h := sha256.Sum256([]byte("td_secret"))
 
-	k, err := s.CreateAPIKey(ctx, "acme", "ci", "tq_secre", h[:])
+	k, err := s.CreateAPIKey(ctx, "acme", "ci", "td_secre", h[:])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func TestAPIKeyLifecycle(t *testing.T) {
 	if _, err := s.TenantForKeyHash(ctx, other[:]); !errors.Is(err, ErrKeyNotFound) {
 		t.Fatalf("unknown: %v", err)
 	}
-	if _, err := s.CreateAPIKey(ctx, "acme", "dup", "tq_secre", h[:]); err == nil {
+	if _, err := s.CreateAPIKey(ctx, "acme", "dup", "td_secre", h[:]); err == nil {
 		t.Fatal("duplicate hash should fail")
 	}
 	keys, err := s.ListAPIKeys(ctx, "acme")

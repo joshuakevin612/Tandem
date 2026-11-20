@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`taskq`: a distributed task execution platform (a mini Celery). Clients submit jobs over HTTP, workers lease and run them from a Postgres-backed queue, and a scheduler process reclaims dead workers' jobs and fires cron schedules. The headline guarantee is **at-least-once execution: an accepted job (HTTP 202) is never lost or left stuck**, even when workers are SIGKILLed. Exactly-once is not promised; fencing and idempotency keys make duplicates safe.
+`tandem`: a distributed task execution platform (a mini Celery). Clients submit jobs over HTTP, workers lease and run them from a Postgres-backed queue, and a scheduler process reclaims dead workers' jobs and fires cron schedules. The headline guarantee is **at-least-once execution: an accepted job (HTTP 202) is never lost or left stuck**, even when workers are SIGKILLed. Exactly-once is not promised; fencing and idempotency keys make duplicates safe.
 
 ## Commands
 
@@ -17,15 +17,15 @@ go test ./internal/store -run TestLeaseContention -count=1 -v   # single test
 docker compose -f deploy/docker-compose.yml up -d --build        # postgres, redis, 2 api replicas behind nginx :8080, 3 workers, 2 schedulers
 
 # Main compose runs AUTH_MODE=apikey; mint a key (printed once), then send it as `Authorization: Bearer <key>` or `X-API-Key`
-docker compose -f deploy/docker-compose.yml exec api taskq-admin create-key -tenant acme -name demo
-docker compose -f deploy/docker-compose.yml exec api taskq-admin list-keys -tenant acme   # also: revoke-key -id <uuid>
+docker compose -f deploy/docker-compose.yml exec api tandem-admin create-key -tenant acme -name demo
+docker compose -f deploy/docker-compose.yml exec api tandem-admin list-keys -tenant acme   # also: revoke-key -id <uuid>
 ```
 
-Observability (in the main compose): Prometheus http://localhost:9091 (scrapes every api/worker/scheduler replica via DNS service discovery, 5s), Grafana http://localhost:3000 (anonymous viewer, **dev only**; provisioned `taskq` dashboard from `deploy/grafana/`). Load tests (k6 via Docker on the compose network; see `loadtest/README.md`, results in `loadtest/RESULTS.md`):
+Observability (in the main compose): Prometheus http://localhost:9091 (scrapes every api/worker/scheduler replica via DNS service discovery, 5s), Grafana http://localhost:3000 (anonymous viewer, **dev only**; provisioned `tandem` dashboard from `deploy/grafana/`). Load tests (k6 via Docker on the compose network; see `loadtest/README.md`, results in `loadtest/RESULTS.md`):
 
 ```bash
 docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.loadtest.yml up -d --build   # rate limit off
-docker run --rm -i --network taskq_default -e API_KEY=$API_KEY -e RATE=200 grafana/k6 run - < loadtest/submit.js   # also loadtest/e2e.js
+docker run --rm -i --network tandem_default -e API_KEY=$API_KEY -e RATE=200 grafana/k6 run - < loadtest/submit.js   # also loadtest/e2e.js
 ```
 
 Chaos test (proves the guarantee; see `chaos/README.md` for reading the report):
@@ -63,11 +63,11 @@ One Go module, one Docker image, three binaries chosen by the compose `command`:
 
 **Redis (optional, `REDIS_URL`; unset = off):** never on the correctness path. Each feature fails open or falls back, and Postgres alone must always give correct behaviour. Rate limiting (`internal/ratelimit`, token bucket in Lua, per tenant, `POST /v1/jobs` only; `RATELIMIT_ENABLED`, `RATELIMIT_RATE_PER_SEC=50`, `RATELIMIT_BURST=100`) allows the request if Redis errors. The status cache (`internal/statuscache`, `STATUS_CACHE_TTL_MS=10000`, 0 disables) falls back to Postgres on any error. Wake-ups (`internal/wake`, `WAKE_ENABLED`) publish on enqueue so idle workers lease sooner; workers still poll, so a lost wake only costs latency.
 
-**Auth (`internal/api/auth.go`):** `AUTH_MODE=header` (default, dev/chaos) trusts `X-Tenant-ID`. `AUTH_MODE=apikey` resolves the tenant from a key (`Authorization: Bearer` or `X-API-Key`; only a hash is stored in `api_keys`), returns 401 otherwise, and ignores `X-Tenant-ID`. Keys are managed with `cmd/taskq-admin`. A revoked key may keep working for up to ~30s (auth cache).
+**Auth (`internal/api/auth.go`):** `AUTH_MODE=header` (default, dev/chaos) trusts `X-Tenant-ID`. `AUTH_MODE=apikey` resolves the tenant from a key (`Authorization: Bearer` or `X-API-Key`; only a hash is stored in `api_keys`), returns 401 otherwise, and ignores `X-Tenant-ID`. Keys are managed with `cmd/tandem-admin`. A revoked key may keep working for up to ~30s (auth cache).
 
 **Edge (`deploy/nginx.conf`):** nginx on host `:8080` round-robins over the 2 `api` replicas (no host port on `api`; Docker DNS re-resolved every 5s). It retries only on connect error/timeout and never retries non-idempotent methods, so a POST is not replayed. The distroless api image has no curl, so its healthcheck is `api -healthcheck` (GET `/readyz`); workers and schedulers wait for a healthy api. The main compose sets `AUTH_MODE=apikey`; the chaos override sets `AUTH_MODE=header` and `RATELIMIT_ENABLED=false`.
 
-**Metrics (`internal/metrics`):** Prometheus, prefix `taskq_`, one `*prometheus.Registry` per binary (never the global default) plus Go/process collectors. Handle structs (`API`, `Worker`, `Scheduler`) have nil-safe methods, so pools, servers and reapers in tests just leave `Metrics` unset. The API serves `/metrics` on its router **outside auth** (restrict it in prod; nginx returns 404 for `/metrics`); worker and scheduler serve it on `METRICS_ADDR` (default `:9090`). The **scheduler alone** registers the `QueueDepth` collector (`taskq_jobs{queue,status}`, `taskq_oldest_queued_job_age_seconds{queue}`; one aggregate query per scrape, cached 5s). Never register it in another binary or every replica exports duplicate series. Route labels are chi route patterns, never raw paths; job `type` labels collapse unregistered types to `unknown`.
+**Metrics (`internal/metrics`):** Prometheus, prefix `tandem_`, one `*prometheus.Registry` per binary (never the global default) plus Go/process collectors. Handle structs (`API`, `Worker`, `Scheduler`) have nil-safe methods, so pools, servers and reapers in tests just leave `Metrics` unset. The API serves `/metrics` on its router **outside auth** (restrict it in prod; nginx returns 404 for `/metrics`); worker and scheduler serve it on `METRICS_ADDR` (default `:9090`). The **scheduler alone** registers the `QueueDepth` collector (`tandem_jobs{queue,status}`, `tandem_oldest_queued_job_age_seconds{queue}`; one aggregate query per scrape, cached 5s). Never register it in another binary or every replica exports duplicate series. Route labels are chi route patterns, never raw paths; job `type` labels collapse unregistered types to `unknown`.
 
 ## Conventions
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"taskq/internal/store"
+	"tandem/internal/store"
 )
 
 // fakeKeys is a KeyResolver backed by a map of sha256(key) -> tenant.
@@ -43,7 +43,7 @@ func apiKeyServer(fs *fakeStore, kr KeyResolver, opts ...AuthOption) http.Handle
 
 func TestAPIKeyAuth(t *testing.T) {
 	kr := newFakeKeys()
-	kr.add("tq_good", "acme")
+	kr.add("td_good", "acme")
 	h := apiKeyServer(&fakeStore{}, kr)
 
 	tests := []struct {
@@ -52,11 +52,11 @@ func TestAPIKeyAuth(t *testing.T) {
 		want int
 	}{
 		{"missing", nil, 401},
-		{"bad key", map[string]string{"Authorization": "Bearer tq_bad"}, 401},
-		{"bad x-api-key", map[string]string{"X-API-Key": "tq_bad"}, 401},
-		{"non-bearer scheme", map[string]string{"Authorization": "Basic tq_good"}, 401},
-		{"bearer ok", map[string]string{"Authorization": "Bearer tq_good"}, 202},
-		{"x-api-key ok", map[string]string{"X-API-Key": "tq_good"}, 202},
+		{"bad key", map[string]string{"Authorization": "Bearer td_bad"}, 401},
+		{"bad x-api-key", map[string]string{"X-API-Key": "td_bad"}, 401},
+		{"non-bearer scheme", map[string]string{"Authorization": "Basic td_good"}, 401},
+		{"bearer ok", map[string]string{"Authorization": "Bearer td_good"}, 202},
+		{"x-api-key ok", map[string]string{"X-API-Key": "td_good"}, 202},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -73,13 +73,13 @@ func TestAPIKeyAuth(t *testing.T) {
 
 func TestAPIKeyRevokedIs401(t *testing.T) {
 	kr := newFakeKeys()
-	kr.add("tq_k", "acme")
+	kr.add("td_k", "acme")
 	h := apiKeyServer(&fakeStore{}, kr, WithAuthCacheTTL(0))
-	hdr := map[string]string{"X-API-Key": "tq_k"}
+	hdr := map[string]string{"X-API-Key": "td_k"}
 	if rec := do(h, "GET", "/v1/jobs", "", hdr); rec.Code != 200 {
 		t.Fatalf("got %d", rec.Code)
 	}
-	kr.revoke("tq_k")
+	kr.revoke("td_k")
 	if rec := do(h, "GET", "/v1/jobs", "", hdr); rec.Code != 401 {
 		t.Fatalf("revoked: got %d", rec.Code)
 	}
@@ -87,11 +87,11 @@ func TestAPIKeyRevokedIs401(t *testing.T) {
 
 func TestAPIKeyResolvesTenantAndIgnoresHeader(t *testing.T) {
 	kr := newFakeKeys()
-	kr.add("tq_k", "acme")
+	kr.add("td_k", "acme")
 	fs := &fakeStore{}
 	h := apiKeyServer(fs, kr)
 	rec := do(h, "POST", "/v1/jobs", `{"type":"t"}`,
-		map[string]string{"X-API-Key": "tq_k", "X-Tenant-ID": "victim"})
+		map[string]string{"X-API-Key": "td_k", "X-Tenant-ID": "victim"})
 	if rec.Code != 202 || fs.got.TenantID != "acme" {
 		t.Fatalf("code %d tenant %q", rec.Code, fs.got.TenantID)
 	}
@@ -103,9 +103,9 @@ func TestAPIKeyResolvesTenantAndIgnoresHeader(t *testing.T) {
 
 func TestAPIKeyCrossTenant404(t *testing.T) {
 	kr := newFakeKeys()
-	kr.add("tq_a", "a")
+	kr.add("td_a", "a")
 	fs := &fakeStore{get: func(id uuid.UUID) (store.Job, error) { return store.Job{ID: id, TenantID: "b"}, nil }}
-	rec := do(apiKeyServer(fs, kr), "GET", "/v1/jobs/"+uuid.NewString(), "", map[string]string{"X-API-Key": "tq_a"})
+	rec := do(apiKeyServer(fs, kr), "GET", "/v1/jobs/"+uuid.NewString(), "", map[string]string{"X-API-Key": "td_a"})
 	if rec.Code != 404 {
 		t.Fatalf("got %d", rec.Code)
 	}
@@ -133,16 +133,16 @@ func TestHeaderModeUnchanged(t *testing.T) {
 
 func TestAPIKeyCacheTTL(t *testing.T) {
 	kr := newFakeKeys()
-	kr.add("tq_k", "acme")
+	kr.add("td_k", "acme")
 	now := time.Unix(1000, 0)
 	h := apiKeyServer(&fakeStore{}, kr, WithAuthClock(func() time.Time { return now }), WithAuthCacheTTL(30*time.Second))
-	hdr := map[string]string{"X-API-Key": "tq_k"}
+	hdr := map[string]string{"X-API-Key": "td_k"}
 	get := func() int { return do(h, "GET", "/v1/jobs", "", hdr).Code }
 
 	if get() != 200 || get() != 200 || kr.calls != 1 {
 		t.Fatalf("second call should hit cache; resolver calls=%d", kr.calls)
 	}
-	kr.revoke("tq_k")
+	kr.revoke("td_k")
 	now = now.Add(29 * time.Second)
 	if get() != 200 {
 		t.Fatal("revocation lag: still cached within TTL")
@@ -155,7 +155,7 @@ func TestAPIKeyCacheTTL(t *testing.T) {
 
 func TestAPIKeyResolverErrorIs500(t *testing.T) {
 	h := NewServer(&fakeStore{}, quiet(), WithDeps(Deps{Auth: APIKeyAuth(errResolver{})}))
-	if rec := do(h, "GET", "/v1/jobs", "", map[string]string{"X-API-Key": "tq_k"}); rec.Code != 500 {
+	if rec := do(h, "GET", "/v1/jobs", "", map[string]string{"X-API-Key": "td_k"}); rec.Code != 500 {
 		t.Fatalf("got %d", rec.Code)
 	}
 }
